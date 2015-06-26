@@ -26,15 +26,20 @@ if __name__ == '__main__':
     sox = rospy.get_param("~sox_command", 'sox -b 32 -e floating-point -r 44100 '
                                                      '-t {device} {file} vad silence {silence}')
     get = rospy.get_param("~google_command", "wget --post-file='{file}' "
-                                                        "--header='Content-Type: audio/x-flac; rate=44100;' -O - "
-                                                        "'https://www.google.com/speech-api/v2/recognize?output=json&lang=en-us&key={key}'")
+                                             "--timeout=10"
+                                             "--header='Content-Type: audio/x-flac; rate=44100;' -O - "
+                                             "'https://www.google.com/speech-api/v2/recognize?output=json&lang=en-us&key={key}'")
     key = rospy.get_param("~key", "AIzaSyBOti4mM-6x9WDnZIjIeyEU21OpBXqWBgw")
 
     while not rospy.is_shutdown():
         rec = tempfile.NamedTemporaryFile('w+b', suffix='.flac')
-        if subprocess.check_call(sox.format(device=device, file=rec.name, silence=silence), shell=True) == 1:
-            rospy.loginfo("sox had an error")
-        wget_output =  subprocess.check_output(get.format(file=rec.name, key=key), shell=True)
+        if subprocess.check_call(sox.format(device=device, file=rec.name, silence=silence), shell=True):
+            system.exit(1)
+        try:
+            wget_output =  subprocess.check_output(get.format(file=rec.name, key=key), shell=True)
+        except:
+            rec.close()
+            continue
         rec.close()
         try:
             parsed = json.loads(wget_output.split('\n')[-2])
