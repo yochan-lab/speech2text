@@ -26,7 +26,7 @@ if __name__ == '__main__':
     sox = rospy.get_param("~sox_command", 'sox -b 32 -e floating-point -r 44100 '
                                                      '-t {device} {file} vad silence {silence}')
     get = rospy.get_param("~google_command", "wget --post-file='{file}' "
-                                             "--timeout=10"
+                                             "--timeout=10 "
                                              "--header='Content-Type: audio/x-flac; rate=44100;' -O - "
                                              "'https://www.google.com/speech-api/v2/recognize?output=json&lang=en-us&key={key}'")
     key = rospy.get_param("~key", "AIzaSyBOti4mM-6x9WDnZIjIeyEU21OpBXqWBgw")
