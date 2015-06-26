@@ -38,7 +38,7 @@ if __name__ == '__main__':
         rec.close()
         try:
             parsed = json.loads(wget_output.split('\n')[-2])
-            print parsed
+            #print parsed
             first_res = parsed['result'][0]['alternative'][0]
             if "confidence" in first_res:
                 confidence.publish(float(first_res["confidence"]))
