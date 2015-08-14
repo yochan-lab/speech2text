@@ -21,13 +21,18 @@ rate = None
 
 def work(run_once=True):
     rospy.loginfo("Running. Singleton: %s" % str(run_once))
-    tries = 1
-    while not rospy.is_shutdown() and tries < 4:
+    tries = 0
+    while not rospy.is_shutdown() and tries < 2:
+        tries += 1
         rec = tempfile.NamedTemporaryFile('w+b', suffix='.flac')
         rospy.loginfo('made temp file')
         rospy.loginfo('starting to listen')
-        if subprocess.check_call(sox.format(device=device, file=rec.name, silence=silence), shell=True):
-            system.exit(1)
+        try:
+            subprocess.check_call(sox.format(device=device, file=rec.name, silence=silence), shell=True)
+        except subprocess.CalledProcessError:
+            rospy.loginfo('recording timed out')
+            rec.close()
+            continue
         rospy.loginfo('finished listen')
         rospy.loginfo('starting web')
         try:
@@ -52,7 +57,6 @@ def work(run_once=True):
         except:
             pass
              # no result
-        tries += 1
         rospy.loginfo("Trying the recognizer again")
         rate.sleep()
     return std_srvs.srv.TriggerResponse(False, "No result")
@@ -69,7 +73,7 @@ if __name__ == '__main__':
     confidence = rospy.Publisher("~confidence", Float32, queue_size=1)
     device = rospy.get_param("~device", "alsa hw:1")
     silence = rospy.get_param("~silence", "0 1 00:00:01.0 8%")
-    sox = rospy.get_param("~sox_command", 'sox -b 32 -e floating-point -r 44100 '
+    sox = rospy.get_param("~sox_command", 'timeout 10 sox -b 32 -e floating-point -r 44100 '
                                                      '-t {device} {file} vad silence {silence}')
     get = rospy.get_param("~google_command", "wget --post-file='{file}' "
                                              "--timeout=10 "
